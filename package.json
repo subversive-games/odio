@@ -1,0 +1,24 @@
+{
+  "name": "odio",
+  "version": "1.0.0",
+  "description": "An art game about prejudice",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/subversive-games/odio.git"
+  },
+  "keywords": [
+    "prejudice",
+    "hate",
+    "intolerance"
+  ],
+  "author": "tobiasbu",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/subversive-games/odio/issues"
+  },
+  "homepage": "https://github.com/subversive-games/odio#readme"
+}
