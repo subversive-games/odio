@@ -20,5 +20,14 @@
   "bugs": {
     "url": "https://github.com/subversive-games/odio/issues"
   },
-  "homepage": "https://github.com/subversive-games/odio#readme"
+  "homepage": "https://github.com/subversive-games/odio#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-rename": "^1.2.3",
+    "gulp-uglify": "^3.0.0",
+    "pump": "^3.0.0",
+    "run-sequence": "^2.2.1",
+    "uglify-js": "^3.3.27"
+  }
 }
