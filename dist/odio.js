@@ -2,6 +2,7 @@ var CameraControl = function (camera) {
 
     this.camera = camera;
     this.isMoving = false;
+    this.bounds = new scintilla.BoundingBox(camera.bounds);
 
     var to = {
         x: 0,
@@ -27,6 +28,10 @@ var CameraControl = function (camera) {
         if (this.isMoving === false)
             return;
 
+        this.bounds.copy(this.camera.bounds);
+        this.bounds.decrease(64, 64);
+        this.bounds.move(64, 64);
+
         moveTimer += dt / 0.5;
 
         if (moveTimer >= 1) {
@@ -45,25 +50,37 @@ var CameraControl = function (camera) {
 var GameScene = function () {
 
     var cameraControl;
+    var rect;
+    var renderRect;
     this.start = function () {
-        var rect = this.create.rectangle();
-        var render = rect.modules.get('render');
-        render.width = 64;
-        render.height = 64;
+        rect = this.create.rectangle();
+        renderRect = rect.modules.get('render');
+        renderRect.width = 64;
+        renderRect.height = 64;
         rect.position.set(VIEW.w / 2 - 32, VIEW.h / 2 - 32);
-        
+
         cameraControl = new CameraControl(this.camera);
 
     };
 
     this.update = function (dt) {
 
-        
-        if (this.key.pressed(scintilla.KeyCode.Down)) {
-            cameraControl.move(0, 64);
+        if (cameraControl.isMoving === false) {
+            var vertical = this.key.pressed(scintilla.KeyCode.Down)-this.key.pressed(scintilla.KeyCode.Up);
+            var horizontal = this.key.pressed(scintilla.KeyCode.Right) - this.key.pressed(scintilla.KeyCode.Left);
+
+            if (vertical !== 0) {
+                cameraControl.move(0, 64 * vertical);
+            } else if (horizontal !== 0) {
+                cameraControl.move(64 * horizontal, 0);
+            }
         }
 
         cameraControl.update(dt);
+
+        if (!renderRect.bounds.intersects(cameraControl.bounds)) {
+            rect.y = cameraControl.camera.y;
+        }
 
     };
 
