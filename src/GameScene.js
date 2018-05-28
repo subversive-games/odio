@@ -35,7 +35,8 @@ var CameraControl = function (camera) {
         moveTimer += dt / 0.5;
 
         if (moveTimer >= 1) {
-            this.camera.position.set(to.x, to.y);
+            this.camera.x = to.x;
+            this.camera.y = to.y;
             moveTimer = 0;
             this.isMoving = false;
         } else {
@@ -47,9 +48,15 @@ var CameraControl = function (camera) {
 
 }
 
+
+
+
+
+
 var GameScene = function () {
 
     var cameraControl;
+    var scrolls;
     var rect;
     var renderRect;
     this.start = function () {
@@ -60,6 +67,7 @@ var GameScene = function () {
         rect.position.set(VIEW.w / 2 - 32, VIEW.h / 2 - 32);
 
         cameraControl = new CameraControl(this.camera);
+        scrolls = new ScrollsControl(this.game.system.render.canvas, {x:VIEW.w, y: VIEW.h+64});
 
     };
 
@@ -78,9 +86,17 @@ var GameScene = function () {
 
         cameraControl.update(dt);
 
+        scrolls.update(cameraControl);
+
         /*if (!renderRect.bounds.intersects(cameraControl.bounds)) {
             rect.y = cameraControl.camera.y;
         }*/
+
+    };
+
+    this.gui = function(drawer) {
+
+        scrolls.render(drawer);
 
     };
 

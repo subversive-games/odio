@@ -8,7 +8,7 @@ var config = {
     width: VIEW.w,
     height: VIEW.h,
     parent: "body",
-    debug: true,
+    debug: false,
     pixelated: false,
     roundPixels: false,
 };
