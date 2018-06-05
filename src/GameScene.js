@@ -1,57 +1,3 @@
-var CameraControl = function (camera) {
-
-    this.camera = camera;
-    this.isMoving = false;
-    this.bounds = new scintilla.BoundingBox(camera.bounds);
-
-    var to = {
-        x: 0,
-        y: 0
-    };
-    var from = {
-        x: 0,
-        y: 0
-    };
-    var moveTimer = 0;
-
-    this.move = function (x, y) {
-        this.isMoving = true;
-        from.x = this.camera.x;
-        from.y = this.camera.y;
-        to.x = from.x + x;
-        to.y = from.y + y;
-        moveTimer = 0;
-    };
-
-    this.update = function (dt) {
-
-        if (this.isMoving === false)
-            return;
-
-        this.bounds.copy(this.camera.bounds);
-        this.bounds.decrease(64, 64);
-        this.bounds.move(64, 64);
-
-        moveTimer += dt / 0.5;
-
-        if (moveTimer >= 1) {
-            this.camera.x = to.x;
-            this.camera.y = to.y;
-            moveTimer = 0;
-            this.isMoving = false;
-        } else {
-            this.camera.x = scintilla.Math.lerp(from.x, to.x, moveTimer);
-            this.camera.y = scintilla.Math.lerp(from.y, to.y, moveTimer);
-        }
-
-    };
-
-}
-
-
-
-
-
 
 var GameScene = function () {
 
@@ -59,15 +5,38 @@ var GameScene = function () {
     var scrolls;
     var rect;
     var renderRect;
+    var scalex =(VIEWAREA.w / 640) * 0.5;
+    var scaley = (VIEWAREA.h / 384) * 0.501;
+
+    console.log(scalex);
+
+    this.preload = function() {
+        this.load.setPath('assets/');
+        this.load.image('bg', 'background.jpg');
+        this.load.image('fog', 'fog.png');
+        this.load.image('arrow', 'arrow.png');
+        this.load.image('arrow_hover', 'arrow_hover.png');
+        this.load.image('arrow_pressed', 'arrow_pressed.png');
+        this.load.image('scroll_bg', 'scroll_bg.png');
+    }
+
+    this.postload = function() {
+        this.cache.pattern.create('scroll_bg');
+    }
+
     this.start = function () {
+        
+        cameraControl = new CameraControl(this.camera);
+        scrolls = new ScrollsControl(this.game.system.render.canvas);
+        this.bg = this.create.sprite('bg');
+        //bg.scale.set(0.5, 0.5);
+
         rect = this.create.rectangle();
         renderRect = rect.modules.get('render');
         renderRect.width = 64;
         renderRect.height = 64;
-        rect.position.set(VIEW.w / 2 - 32, VIEW.h / 2 - 32);
+        rect.position.set(VIEWAREA.w / 2 - 32, VIEWAREA.h / 2 - 32);
 
-        cameraControl = new CameraControl(this.camera);
-        scrolls = new ScrollsControl(this.game.system.render.canvas, {x:VIEW.w, y: VIEW.h+64});
 
     };
 
@@ -86,7 +55,9 @@ var GameScene = function () {
 
         cameraControl.update(dt);
 
-        scrolls.update(cameraControl);
+        this.bg.x = this.camera.x - (this.camera.x / World.width) * World.width * 0.1;
+
+        scrolls.update(cameraControl, this.mouse.position);
 
         /*if (!renderRect.bounds.intersects(cameraControl.bounds)) {
             rect.y = cameraControl.camera.y;
@@ -96,6 +67,11 @@ var GameScene = function () {
 
     this.gui = function(drawer) {
 
+        drawer.composite = 'difference';
+        drawer.spriteScaled('fog',0,0, scalex,scaley);        
+        drawer.spriteScaled('fog',0,0,scalex,scaley);
+       
+        drawer.composite = 'source-over';
         scrolls.render(drawer);
 
     };

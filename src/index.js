@@ -1,12 +1,19 @@
 
-var VIEW = {
-    w: 64*15,
-    h: 64*10,
+var VIEWAREA = {
+    w : 768, // 640 10
+    h : 512 // 384 6
+};
+
+var SCROLLBUTTONSIZE = 32;
+
+var VIEWPORT = {
+    w: VIEWAREA.w + SCROLLBUTTONSIZE,// 665,
+    h: VIEWAREA.h + SCROLLBUTTONSIZE,// 409
 };
 
 var config = {
-    width: VIEW.w,
-    height: VIEW.h,
+    width: VIEWPORT.w,
+    height: VIEWPORT.h,
     parent: "body",
     debug: false,
     pixelated: false,

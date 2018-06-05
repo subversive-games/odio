@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/subversive-games/odio#readme",
   "devDependencies": {
+    "browser-sync": "^2.24.4",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.1",
     "gulp-rename": "^1.2.3",
@@ -29,5 +30,8 @@
     "pump": "^3.0.0",
     "run-sequence": "^2.2.1",
     "uglify-js": "^3.3.27"
+  },
+  "dependencies": {
+    "gulp-connect": "^5.5.0"
   }
 }

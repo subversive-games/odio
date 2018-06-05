@@ -50,24 +50,44 @@ var CameraControl = function (camera) {
 
 
 
-
-
-
 var GameScene = function () {
 
     var cameraControl;
     var scrolls;
     var rect;
     var renderRect;
+    var scalex =(VIEWAREA.w / 640) * 0.5;
+    var scaley = (VIEWAREA.h / 384) * 0.501;
+
+    console.log(scalex);
+
+    this.preload = function() {
+        this.load.setPath('assets/');
+        this.load.image('bg', 'background.jpg');
+        this.load.image('fog', 'fog.png');
+        this.load.image('arrow', 'arrow.png');
+        this.load.image('arrow_hover', 'arrow_hover.png');
+        this.load.image('arrow_pressed', 'arrow_pressed.png');
+        this.load.image('scroll_bg', 'scroll_bg.png');
+    }
+
+    this.postload = function() {
+        this.cache.pattern.create('scroll_bg');
+    }
+
     this.start = function () {
+        
+        cameraControl = new CameraControl(this.camera);
+        scrolls = new ScrollsControl(this.game.system.render.canvas);
+        this.bg = this.create.sprite('bg');
+        //bg.scale.set(0.5, 0.5);
+
         rect = this.create.rectangle();
         renderRect = rect.modules.get('render');
         renderRect.width = 64;
         renderRect.height = 64;
-        rect.position.set(VIEW.w / 2 - 32, VIEW.h / 2 - 32);
+        rect.position.set(VIEWAREA.w / 2 - 32, VIEWAREA.h / 2 - 32);
 
-        cameraControl = new CameraControl(this.camera);
-        scrolls = new ScrollsControl(this.game.system.render.canvas, {x:VIEW.w, y: VIEW.h+64});
 
     };
 
@@ -86,7 +106,9 @@ var GameScene = function () {
 
         cameraControl.update(dt);
 
-        scrolls.update(cameraControl);
+        this.bg.x = this.camera.x - (this.camera.x / World.width) * World.width * 0.1;
+
+        scrolls.update(cameraControl, this.mouse.position);
 
         /*if (!renderRect.bounds.intersects(cameraControl.bounds)) {
             rect.y = cameraControl.camera.y;
@@ -96,6 +118,11 @@ var GameScene = function () {
 
     this.gui = function(drawer) {
 
+        drawer.composite = 'difference';
+        drawer.spriteScaled('fog',0,0, scalex,scaley);        
+        drawer.spriteScaled('fog',0,0,scalex,scaley);
+       
+        drawer.composite = 'source-over';
         scrolls.render(drawer);
 
     };
@@ -104,14 +131,21 @@ var GameScene = function () {
 
 };
 
-var VIEW = {
-    w: 64*15,
-    h: 64*10,
+var VIEWAREA = {
+    w : 768, // 640 10
+    h : 512 // 384 6
+};
+
+var SCROLLBUTTONSIZE = 32;
+
+var VIEWPORT = {
+    w: VIEWAREA.w + SCROLLBUTTONSIZE,// 665,
+    h: VIEWAREA.h + SCROLLBUTTONSIZE,// 409
 };
 
 var config = {
-    width: VIEW.w,
-    height: VIEW.h,
+    width: VIEWPORT.w,
+    height: VIEWPORT.h,
     parent: "body",
     debug: false,
     pixelated: false,
@@ -127,8 +161,260 @@ game.scene.set('game');
 
 
 
+
+// x = 10 tiles
+// y = 6 tiles
+var World = {
+    width : 64 * 20,
+    height : 64 * 12
+};
+
+
 var HORIZONTAL = 0;
 var VERTICAL = 1;
+var MIN = 0;
+var MAX = 1;
+
+var ButtonImageScale = {
+    x: SCROLLBUTTONSIZE / 75,
+    y: SCROLLBUTTONSIZE / 77,
+}
+
+var ButtomHalfImage  = {
+    x : ButtonImageScale.x * 74 * 0.5,
+    y : ButtonImageScale.y * 77 * 0.5,
+}
+
+
+var Scroll = function (side, arrowSize) {
+    this.side = side;
+    this.arrowSize = arrowSize;
+    this.trackLength = 0;
+    this.thumbSpaceLength = 0;
+    this.thumb = new Thumb(this, side);
+    this.buttons = [new Button(this, MIN), new Button(this, MAX)];
+    this.x = 0;
+    this.y = 0;
+    this.thumbTrackMin = 0;
+    this.thumbTrackMax = 0;
+    this.min = 0;
+    this.max = 0;
+
+
+    this.render = function (canvas, drawer) {
+
+        // bg
+        drawer.color = '#241F0C';
+
+        if (this.side === VERTICAL) {
+            //drawer.rect(this.x, this.y, arrowSize, canvas.height);
+            var d = drawer.patternTransformed('scroll_bg', 
+            this.x + arrowSize, this.y,
+            canvas.height - arrowSize, undefined,ButtonImageScale.x,1, 90);
+            
+        
+        } else {
+            drawer.rect(this.x, this.y, canvas.width - arrowSize, arrowSize);
+        }
+        this.thumb.render(drawer);
+        this.buttons[0].render(drawer);
+        this.buttons[1].render(drawer);
+    };
+
+    this.update = function (cameraControl, mousePos) {
+
+        if (cameraControl.isMoving) {
+            if (this.side === VERTICAL) {
+                this.thumb.setLocation(cameraControl.camera.y / World.height);
+            } else {
+                this.thumb.setLocation(cameraControl.camera.x / World.width);
+            }
+        }
+
+        this.buttons[0].update(mousePos);
+        this.buttons[1].update(mousePos);
+
+    }
+
+    this.init = function (canvas, viewport) {
+
+        var thumbSize = 50;
+
+        var arrowThumbSpace = arrowSize * 3;
+        var maxArrowRight = arrowSize * 2;
+
+        if (this.side === VERTICAL) {
+            this.thumbSpaceLength = viewport.y - arrowThumbSpace;
+
+            this.x = canvas.width - this.arrowSize;
+            this.y = 0; 
+        
+            thumbSize = Math.max(50, this.thumbSpaceLength * (viewport.y / World.height));
+            this.max = canvas.height - maxArrowRight;
+        } else {
+
+            this.thumbSpaceLength = viewport.x - arrowThumbSpace;
+
+            this.x = 0;
+            this.y = canvas.height - this.arrowSize;
+          
+            thumbSize = Math.max(50, this.thumbSpaceLength * (viewport.x / World.width));
+            this.max = canvas.width - maxArrowRight;
+        }
+
+        
+        this.thumb.size = thumbSize;
+        this.thumbTrackMin = this.arrowSize;
+        this.thumbTrackMax = this.max - thumbSize;
+        this.trackLength = this.thumbSpaceLength;
+
+        this.buttons[0].init();
+        this.buttons[1].init();
+        //this.thumb.size = viewport.y / (this.max - this.min + viewport.y) * this.trackLength;
+
+        this.thumb.setLocation(0);
+    }
+
+
+}
+
+
+
+var Button = function (scroll, which) {
+
+    this.scroll = scroll;
+    this.which = which;
+    this.rect = new scintilla.Rect();
+    this.state = 0;
+    this.spr = 'arrow';
+    this.scale = {
+        x : ButtonImageScale.x,
+        y : ButtonImageScale.y,
+    }
+    this.ang = 0;
+
+    this.init = function () {
+
+
+        var arrowSize = this.scroll.arrowSize;
+
+
+        this.rect.set(this.scroll.x, this.scroll.y, arrowSize, arrowSize);
+
+        if (this.which === MAX) {
+            if (this.scroll.side === VERTICAL) {
+                this.rect.y = this.scroll.y + this.scroll.max;
+                this.ang = 90;
+                
+            } else {
+                this.rect.x = this.scroll.x + this.scroll.max;
+            }
+        } else {
+            if (this.scroll.side === HORIZONTAL) {
+                this.scale.x *= -1;
+            } else {
+                this.ang = -90;
+            }
+        }
+
+    };
+
+
+
+    this.update = function (mousePos) {
+
+        var contains = this.rect.contains(mousePos.x, mousePos.y);
+
+        if (contains) {
+            if (this.state === 0) {
+                this.state = 1;
+                this.spr = 'arrow_hover';
+            }
+        } else {
+            if (this.state !== 0) {
+                this.state = 0;
+                this.spr = 'arrow';
+            }
+            
+        }
+
+
+    }
+
+    this.render = function (drawer) {
+
+
+        drawer.color = 'green'; //'#F00a';
+
+        drawer.spriteTransformed(this.spr, 
+            this.rect.x + ButtomHalfImage.x, 
+            this.rect.y + ButtomHalfImage.y, 
+            this.scale.x, ButtonImageScale.y, 
+            this.ang,
+            0.5 ,0.5);
+
+        // if (this.scroll.side === VERTICAL) {
+
+        //     if (this.which === MIN)
+        //         drawer.rect(this.scroll.x, this.scroll.y, arrowSize, arrowSize);
+        //     else
+        //         drawer.rect(this.scroll.x, this.scroll.y + (canvas.height - arrowSize), arrowSize, arrowSize);
+
+        // } else {
+        //     if (this.which === MIN)
+        //         drawer.rect(this.scroll.x, this.scroll.y, arrowSize, arrowSize);
+        //     else {
+        //         //drawer.rect(this.scroll.x + (canvas.width - arrowSize * 2), this.scroll.y, arrowSize, arrowSize);
+
+        //     }
+        // }
+    }
+
+}
+
+var ScrollsControl = function (canvas) {
+
+
+    this.canvas = canvas;
+
+
+   
+
+    init = function () {
+
+        var arrowSize = SCROLLBUTTONSIZE;
+        //this.viewportRatio = {x:0,y:0};
+        //this.viewportRatio.x = canvas.width / worldSize.x;
+        //this.viewportRatio.y = canvas.height / worldSize.y;
+
+        this.viewport = {
+            x: VIEWPORT.w,
+            y: VIEWPORT.h
+        };
+
+
+        this.verticalScroll = new Scroll(VERTICAL, arrowSize);
+        this.horizontalScroll = new Scroll(HORIZONTAL, arrowSize);
+        this.verticalScroll.init(canvas, this.viewport);
+        this.horizontalScroll.init(canvas, this.viewport);
+    }.call(this);
+
+    this.update = function (cameraControl, mousePos) {
+        
+        this.verticalScroll.update(cameraControl, mousePos);
+        this.horizontalScroll.update(cameraControl, mousePos);
+
+    }
+
+    this.render = function (drawer) {
+
+        var canvas = drawer.canvas;
+
+        this.verticalScroll.render(canvas, drawer);
+        this.horizontalScroll.render(canvas, drawer);
+    }
+
+}
 
 var Thumb = function (scroll) {
     this.scroll = scroll;
@@ -150,131 +436,7 @@ var Thumb = function (scroll) {
     this.setLocation = function (location) {
         //var val = location / this.scroll.trackLength;
         //this.location = location * (this.scroll.max - this.scroll.min);
-        this.location = scintilla.Math.lerp(this.scroll.min, this.scroll.max, location);
+        this.location = scintilla.Math.lerp(this.scroll.thumbTrackMin, this.scroll.thumbTrackMax, location);
     }
 
 }
-
-var Scroll = function (side, arrowSize) {
-    this.side = side;
-    this.arrowSize = arrowSize;
-    this.trackLength = 0;
-    this.thumb = new Thumb(this, side);
-    this.x = 0;
-    this.y = 0;
-    this.min = 0;
-    this.max = 0;
-
-    this.render = function (canvas, drawer) {
-
-        if (this.side === VERTICAL) {
-   
-            // bg
-            drawer.color = '#Aab';
-            drawer.rect(this.x, this.y, arrowSize, canvas.height);
-            // thumb
-            this.thumb.render(drawer);
-            // buttons
-            drawer.color = '#F00a';
-            drawer.rect(this.x, this.y, arrowSize, arrowSize);
-            drawer.rect(this.x, this.y + (canvas.height - arrowSize), arrowSize, arrowSize);
-        } else {
-            // bg
-            drawer.color = '#Aab';
-            drawer.rect(this.x, this.y, canvas.width - arrowSize, arrowSize);
-            // thumb
-            this.thumb.render(drawer);
-            // buttons
-            drawer.color = '#F00a';
-            drawer.rect(this.x, this.y, arrowSize, arrowSize);
-            drawer.rect(this.x + (canvas.width - arrowSize * 2), this.y, arrowSize, arrowSize);
-        }
-    };
-
-    this.compute = function (canvas, viewport, scrollArea) {
-
-        if (this.side === VERTICAL) {
-            this.trackLength = scrollArea.y;
-
-            this.x = canvas.width - this.arrowSize;
-            this.y = 0;//this.arrowSize;
-            this.min = this.arrowSize;
-            this.max = canvas.height - this.arrowSize;
-
-            // thumbHeight = m_originalViewportSize.Value / (Maximum - Minimum + m_originalViewportSize.Value) * trackLength;
-            this.thumb.size = Math.max(50, this.trackLength * (viewport.y / World.height));
-        } else {
-
-            this.trackLength = scrollArea.x;
-
-            this.x = 0; 
-            this.y = canvas.height - this.arrowSize;
-            this.min = this.arrowSize;
-            this.max = canvas.width - this.arrowSize * 2;
-            this.thumb.size = Math.max(50, this.trackLength * (viewport.x / World.width));
-
-        }
-
-        
-        //this.thumb.size = viewport.y / (this.max - this.min + viewport.y) * this.trackLength;
-
-        this.thumb.setLocation(0);
-    }
-
-
-}
-
-var ScrollsControl = function (canvas) {
-
-
-    this.canvas = canvas;
-
-
-    var arrowSize = 25;
-
-    init = function () {
-
-
-        //this.viewportRatio = {x:0,y:0};
-        //this.viewportRatio.x = canvas.width / worldSize.x;
-        //this.viewportRatio.y = canvas.height / worldSize.y;
-
-
-        this.viewport = {
-            x: canvas.width,
-            y: canvas.height
-        };
-        this.scrollLength = {
-            x:  canvas.width - arrowSize * 3,
-            y:  canvas.height - arrowSize * 2
-        };
-
-        this.verticalScroll = new Scroll(VERTICAL, arrowSize);
-        this.horizontalScroll = new Scroll(HORIZONTAL, arrowSize);
-        this.verticalScroll.compute(canvas, this.viewport, this.scrollLength);
-        this.horizontalScroll.compute(canvas, this.viewport, this.scrollLength);
-    }.call(this);
-
-    this.update = function (cameraControl) {
-        if (!cameraControl.isMoving)
-            return;
-
-        this.verticalScroll.thumb.setLocation(cameraControl.camera.y / World.height);
-        this.horizontalScroll.thumb.setLocation(cameraControl.camera.x / World.width);
-    }
-
-    this.render = function (drawer) {
-
-        var canvas = drawer.canvas;
-
-        this.verticalScroll.render(canvas, drawer);
-        this.horizontalScroll.render(canvas, drawer);
-    }
-
-}
-
-var World = {
-    width : 64 * 20,
-    height : 64 * 12
-};
-
