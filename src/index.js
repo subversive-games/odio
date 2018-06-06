@@ -11,20 +11,14 @@ var VIEWPORT = {
     h: VIEWAREA.h + SCROLLBUTTONSIZE,// 409
 };
 
-var config = {
-    width: VIEWPORT.w,
-    height: VIEWPORT.h,
-    parent: "body",
-    debug: false,
-    pixelated: false,
-    roundPixels: false,
+
+
+var World = {
+    width : 64 * 20,
+    height : 64 * 12
 };
 
-var game = new scintilla.Game(config);
 
 
-
-game.scene.add('game', GameScene);
-game.scene.set('game');
 
 

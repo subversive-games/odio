@@ -1,3 +1,28 @@
+
+var VIEWAREA = {
+    w : 768, // 640 10
+    h : 512 // 384 6
+};
+
+var SCROLLBUTTONSIZE = 32;
+
+var VIEWPORT = {
+    w: VIEWAREA.w + SCROLLBUTTONSIZE,// 665,
+    h: VIEWAREA.h + SCROLLBUTTONSIZE,// 409
+};
+
+
+
+var World = {
+    width : 64 * 20,
+    height : 64 * 12
+};
+
+
+
+
+
+
 var CameraControl = function (camera) {
 
     this.camera = camera;
@@ -61,19 +86,7 @@ var GameScene = function () {
 
     console.log(scalex);
 
-    this.preload = function() {
-        this.load.setPath('assets/');
-        this.load.image('bg', 'background.jpg');
-        this.load.image('fog', 'fog.png');
-        this.load.image('arrow', 'arrow.png');
-        this.load.image('arrow_hover', 'arrow_hover.png');
-        this.load.image('arrow_pressed', 'arrow_pressed.png');
-        this.load.image('scroll_bg', 'scroll_bg.png');
-    }
 
-    this.postload = function() {
-        this.cache.pattern.create('scroll_bg');
-    }
 
     this.start = function () {
         
@@ -131,45 +144,60 @@ var GameScene = function () {
 
 };
 
-var VIEWAREA = {
-    w : 768, // 640 10
-    h : 512 // 384 6
-};
+var TitleScene = function () {
 
-var SCROLLBUTTONSIZE = 32;
+    var tx = VIEWAREA.w / 2;
+    var ty = VIEWAREA.h / 2 - 64;
+    var tilty = 0;
+    var tiltx = 0;
+    var tiltTimer = 0;
+    var offsety = 31.5;
 
-var VIEWPORT = {
-    w: VIEWAREA.w + SCROLLBUTTONSIZE,// 665,
-    h: VIEWAREA.h + SCROLLBUTTONSIZE,// 409
-};
+    this.preload = function() {
+        this.load.setPath('assets/');
+        this.load.image('bg', 'background.jpg');
+        this.load.image('fog', 'fog.png');
+        this.load.image('arrow', 'arrow.png');
+        this.load.image('arrow_hover', 'arrow_hover.png');
+        this.load.image('arrow_pressed', 'arrow_pressed.png');
+        this.load.image('scroll_bg', 'scroll_bg.png');
+        this.load.image('title_0', 'title_burn.png');
+        this.load.image('title_1', 'title_multiply.png');
+        this.load.image('title_2', 'title_overlay.png');
+      
+       
+    }
 
-var config = {
-    width: VIEWPORT.w,
-    height: VIEWPORT.h,
-    parent: "body",
-    debug: false,
-    pixelated: false,
-    roundPixels: false,
-};
+    this.postload = function() {
+        this.cache.pattern.create('scroll_bg');
+    }
 
-var game = new scintilla.Game(config);
+    this.update = function(dt) {
+        tiltTimer += dt;
 
+        if (tiltTimer > 0.15) {
+            tilty = scintilla.Random.range(-2,2);
+            tiltx =  scintilla.Random.range(-2,2);
+            tiltTimer = 0;
+        }
+    }
 
+    this.gui = function(drawer) {
 
-game.scene.add('game', GameScene);
-game.scene.set('game');
+        drawer.sprite('bg', 0, 0);
+        drawer.alpha = 1;
+        drawer.composite = 'color-burn';
+        drawer.sprite('title_0', tx + tiltx, ty - offsety + tilty, 0.5, 0.5);
+        drawer.composite = 'multiply';
+        drawer.sprite('title_1', tx, ty - offsety, 0.5, 0.5);
+        
+        drawer.alpha = 0.51;
+        drawer.composite = 'overlay';
+        drawer.sprite('title_2', tx, ty, 0.5, 0.5);
 
+    }
 
-
-
-// x = 10 tiles
-// y = 6 tiles
-var World = {
-    width : 64 * 20,
-    height : 64 * 12
-};
-
-
+}
 var HORIZONTAL = 0;
 var VERTICAL = 1;
 var MIN = 0;
@@ -440,3 +468,20 @@ var Thumb = function (scroll) {
     }
 
 }
+
+var config = {
+    width: VIEWPORT.w,
+    height: VIEWPORT.h,
+    parent: "body",
+    debug: false,
+    pixelated: false,
+    roundPixels: false,
+};
+
+var game = new scintilla.Game(config);
+
+console.log(TitleScene);
+
+game.scene.add('title', TitleScene);
+game.scene.add('game', GameScene);
+game.scene.set('title');
