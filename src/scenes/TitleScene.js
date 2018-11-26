@@ -35,6 +35,10 @@ var TitleScene = function () {
             tiltx =  scintilla.Random.range(-2,2);
             tiltTimer = 0;
         }
+
+        if (this.key.pressed(scintilla.KeyCode.Enter)) {
+            this.scene.set('game')
+        }
     }
 
     this.gui = function(drawer) {

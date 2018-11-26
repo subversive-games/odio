@@ -27,7 +27,10 @@ var Scroll = function (side, arrowSize) {
             
         
         } else {
-            drawer.rect(this.x, this.y, canvas.width - arrowSize, arrowSize);
+            drawer.patternTransformed('scroll_bg', 
+            this.x, this.y,
+            canvas.width - arrowSize, undefined,1,ButtonImageScale.y, 0);
+            //drawer.rect(this.x, this.y, canvas.width - arrowSize, arrowSize);
         }
         this.thumb.render(drawer);
         this.buttons[0].render(drawer);
